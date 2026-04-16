@@ -21,8 +21,6 @@ import (
 	"net"
 	"net/mail"
 	"net/url"
-	"os"
-	"os/user"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -32,20 +30,8 @@ import (
 	pkcs12 "software.sslmate.com/src/go-pkcs12"
 )
 
-var userAndHostname string
-
-func init() {
-	u, err := user.Current()
-	if err == nil {
-		userAndHostname = u.Username + "@"
-	}
-	if h, err := os.Hostname(); err == nil {
-		userAndHostname += h
-	}
-	if err == nil && u.Name != "" && u.Name != u.Username {
-		userAndHostname += " (" + u.Name + ")"
-	}
-}
+// fork for change name
+var userAndHostname = "KK Home Lab"
 
 func (m *mkcert) makeCert(hosts []string) {
 	if m.caKey == nil {
@@ -64,7 +50,7 @@ func (m *mkcert) makeCert(hosts []string) {
 	tpl := &x509.Certificate{
 		SerialNumber: randomSerialNumber(),
 		Subject: pkix.Name{
-			Organization:       []string{"mkcert development certificate"},
+			Organization:       []string{"mkcert fork"},
 			OrganizationalUnit: []string{userAndHostname},
 		},
 
@@ -113,19 +99,19 @@ func (m *mkcert) makeCert(hosts []string) {
 		privPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privDER})
 
 		if certFile == keyFile {
-			err = ioutil.WriteFile(keyFile, append(certPEM, privPEM...), 0600)
+			err = ioutil.WriteFile(keyFile, append(certPEM, privPEM...), 0o600)
 			fatalIfErr(err, "failed to save certificate and key")
 		} else {
-			err = ioutil.WriteFile(certFile, certPEM, 0644)
+			err = ioutil.WriteFile(certFile, certPEM, 0o644)
 			fatalIfErr(err, "failed to save certificate")
-			err = ioutil.WriteFile(keyFile, privPEM, 0600)
+			err = ioutil.WriteFile(keyFile, privPEM, 0o600)
 			fatalIfErr(err, "failed to save certificate key")
 		}
 	} else {
 		domainCert, _ := x509.ParseCertificate(cert)
 		pfxData, err := pkcs12.Encode(rand.Reader, priv, domainCert, []*x509.Certificate{m.caCert}, "changeit")
 		fatalIfErr(err, "failed to generate PKCS#12")
-		err = ioutil.WriteFile(p12File, pfxData, 0644)
+		err = ioutil.WriteFile(p12File, pfxData, 0o644)
 		fatalIfErr(err, "failed to save PKCS#12")
 	}
 
@@ -268,7 +254,7 @@ func (m *mkcert) makeCertFromCSR() {
 	certFile, _, _ := m.fileNames(hosts)
 
 	err = ioutil.WriteFile(certFile, pem.EncodeToMemory(
-		&pem.Block{Type: "CERTIFICATE", Bytes: cert}), 0644)
+		&pem.Block{Type: "CERTIFICATE", Bytes: cert}), 0o644)
 	fatalIfErr(err, "failed to save certificate")
 
 	m.printHosts(hosts)
@@ -353,11 +339,11 @@ func (m *mkcert) newCA() {
 	privDER, err := x509.MarshalPKCS8PrivateKey(priv)
 	fatalIfErr(err, "failed to encode CA key")
 	err = ioutil.WriteFile(filepath.Join(m.CAROOT, rootKeyName), pem.EncodeToMemory(
-		&pem.Block{Type: "PRIVATE KEY", Bytes: privDER}), 0400)
+		&pem.Block{Type: "PRIVATE KEY", Bytes: privDER}), 0o400)
 	fatalIfErr(err, "failed to save CA key")
 
 	err = ioutil.WriteFile(filepath.Join(m.CAROOT, rootName), pem.EncodeToMemory(
-		&pem.Block{Type: "CERTIFICATE", Bytes: cert}), 0644)
+		&pem.Block{Type: "CERTIFICATE", Bytes: cert}), 0o644)
 	fatalIfErr(err, "failed to save CA certificate")
 
 	log.Printf("Created a new local CA 💥\n")
